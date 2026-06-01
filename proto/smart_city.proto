@@ -1,0 +1,45 @@
+syntax = "proto3";
+
+package smartcity;
+
+// Define os tipos de dispositivos na cidade
+enum DeviceType {
+  UNKNOWN = 0;
+  TEMPERATURE = 1;
+  AIR_QUALITY = 2;
+  TRAFFIC_LIGHT = 3;
+  CAMERA = 4;
+}
+
+// 1. Mensagem enviada pelo Gateway (Multicast UDP)
+message DiscoveryRequest {
+  string gateway_id = 1;
+}
+
+// 2. Resposta enviada pela Fonte de Dados (Unicast UDP para o Gateway)
+message DiscoveryResponse {
+  string device_id = 1;
+  DeviceType type = 2;
+  string ip = 3;
+  int32 tcp_port = 4;
+  string initial_state = 5;
+}
+
+// 3. Envio contínuo de dados (Unicast UDP)
+message DataStream {
+  string device_id = 1;
+  float value = 2;
+  int64 timestamp = 3;
+}
+
+// 4. Comandos de Controle (TCP)
+message Command {
+  enum Action {
+    TURN_ON = 0;
+    TURN_OFF = 1;
+    CHANGE_FREQ = 2;
+    SET_THRESHOLD = 3;
+  }
+  Action action = 1;
+  float parameter = 2;
+}
