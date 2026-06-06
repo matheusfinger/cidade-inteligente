@@ -4,7 +4,6 @@ import time
 import sys
 import os
 import sqlite3
-import statistics
 
 pasta_raiz = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(pasta_raiz)
@@ -22,11 +21,6 @@ DB_PATH            = os.path.join(os.path.dirname(__file__), 'gateway.db')
 
 dispositivos_ativos = {}
 dispositivos_lock   = threading.Lock()
-
-# Histórico para cálculos estatísticos (Analytics)
-historico_dados = {}
-historico_lock = threading.Lock()
-MAX_HISTORICO = 100 # Mantém apenas as últimas 100 leituras para não estourar a RAM
 
 # ── Banco de dados ────────────────────────────────────────────────────────────
 # Usamos uma conexão por thread (check_same_thread=False + lock próprio)
