@@ -43,3 +43,25 @@ message Command {
   Action action = 1;
   float parameter = 2;
 }
+
+// 5. Requisição do Cliente para o Gateway
+message ClientRequest {
+  enum RequestType {
+    GET_STATUS = 0;
+    GET_ANALYTICS = 1;
+    SEND_COMMAND = 2;
+  }
+  RequestType type = 1;
+  
+  // Usado se for GET_ANALYTICS ou SEND_COMMAND
+  string target_device_id = 2; 
+  
+  // Usado apenas se for SEND_COMMAND
+  Command command_payload = 3; 
+}
+
+// 6. Resposta do Gateway para o Cliente
+message ClientResponse {
+  bool success = 1;
+  string message = 2; // Pode conter a lista formatada ou o resultado do cálculo
+}
