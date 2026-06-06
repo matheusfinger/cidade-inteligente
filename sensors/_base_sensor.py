@@ -93,7 +93,9 @@ class BaseSensor:
             if not data:
                 return
             cmd = smart_city_pb2.Command()
-            cmd.ParseFromString(data)
+            #cmd.ParseFromString(data)
+            if data:
+                cmd.ParseFromString(data)
             self._apply_command(cmd)
         except Exception as e:
             print(f"[{self.device_id}] Erro no comando: {e}")
