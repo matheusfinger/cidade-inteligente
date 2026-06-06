@@ -4,6 +4,7 @@ import time
 import sys
 import os
 import sqlite3
+import json
 
 pasta_raiz = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(pasta_raiz)
@@ -18,6 +19,7 @@ DATA_PORT          = 5002
 DISCOVERY_INTERVAL = 15
 OFFLINE_TIMEOUT    = 45
 DB_PATH            = os.path.join(os.path.dirname(__file__), 'gateway.db')
+GATEWAY_TCP_PORT = 7000
 
 dispositivos_ativos = {}
 dispositivos_lock   = threading.Lock()
@@ -165,12 +167,103 @@ def watchdog_loop():
                 del dispositivos_ativos[did]
                 print(f"[Gateway] ⚠ Dispositivo removido (timeout): {did}")
 
+def forward_command_to_sensor(device_id, command_msg):
+    """Repassa comandos TCP do Cliente para as Fontes Controláveis"""
+    with dispositivos_lock:
+        if device_id not in dispositivos_ativos:
+            return False, "Dispositivo não encontrado ou offline."
+        info = dispositivos_ativos[device_id]
+        if info["tcp_port"] == 0:
+            return False, "Dispositivo não aceita comandos (porta TCP 0)."
+        alvo_ip = info["ip"]
+        alvo_porta = info["tcp_port"]
+
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.settimeout(2.0)
+        s.connect((alvo_ip, alvo_porta))
+        s.sendall(command_msg.SerializeToString())
+        s.close()
+        return True, "Comando enviado com sucesso."
+    except Exception as e:
+        return False, f"Falha ao contatar sensor: {e}"
+
+def handle_client(conn, addr):
+    """Processa requisições do Cliente e busca dados no Banco"""
+    try:
+        data = conn.recv(4096)
+        if not data: return
+        
+        req = smart_city_pb2.ClientRequest()
+        req.ParseFromString(data)
+        
+        resp = smart_city_pb2.ClientResponse()
+        resp.success = True
+        
+        # 1. STATUS
+        if req.type == smart_city_pb2.ClientRequest.GET_STATUS:
+            linhas = []
+            with dispositivos_lock:
+                for did, info in dispositivos_ativos.items():
+                    linhas.append(f"- {did} | Tipo: {info['type']} | Estado: {info['state']} | TCP: {info['tcp_port']}")
+            resp.message = "\n".join(linhas) if linhas else "Nenhum dispositivo ativo."
+
+        # 2. ANALYTICS (Agora lendo direto do SQLite!)
+        elif req.type == smart_city_pb2.ClientRequest.GET_ANALYTICS:
+            media, count = consultar_media(req.target_device_id)
+            if count == 0 or media is None:
+                resp.success = False
+                resp.message = "Sem dados suficientes no banco para este dispositivo."
+            else:
+                resp.message = f"Análise de {req.target_device_id}\nTotal de Leituras na última hora: {count}\nMédia: {media:.2f}"
+
+        # 3. COMANDOS
+        elif req.type == smart_city_pb2.ClientRequest.SEND_COMMAND:
+            sucesso, msg = forward_command_to_sensor(req.target_device_id, req.command_payload)
+            resp.success = sucesso
+            resp.message = msg
+
+        # 4. SÉRIE TEMPORAL
+        elif req.type == smart_city_pb2.ClientRequest.GET_HISTORY:
+            linhas = consultar_historico(req.target_device_id, limite=30) # Pega as últimas 30 leituras
+            if not linhas:
+                resp.success = False
+                resp.message = "[]"
+            else:
+                # Transforma a resposta do banco em uma lista de dicionários
+                dados = [{"timestamp": row["timestamp"], "value": row["value"]} for row in linhas]
+                resp.message = json.dumps(dados)
+
+        conn.sendall(resp.SerializeToString())
+    except Exception as e:
+        print(f"[Gateway] Erro no cliente: {e}")
+    finally:
+        conn.close()
+
+def listen_for_clients():
+    """Servidor TCP para ouvir o Cliente"""
+    srv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    srv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    srv.bind((GATEWAY_IP, GATEWAY_TCP_PORT))
+    srv.listen(5)
+    print(f"[Gateway] Servidor TCP Analítico escutando em {GATEWAY_IP}:{GATEWAY_TCP_PORT}...")
+
+    while True:
+        try:
+            conn, addr = srv.accept()
+            threading.Thread(target=handle_client, args=(conn, addr), daemon=True).start()
+        except Exception:
+            pass
+
 # ── Loop principal ────────────────────────────────────────────────────────────
 if __name__ == "__main__":
     init_db()
 
     threading.Thread(target=listen_for_responses, daemon=True).start()
     threading.Thread(target=listen_for_data,      daemon=True).start()
+
+    # Servidor do Cliente:
+    threading.Thread(target=listen_for_clients,   daemon=True).start()
 
     time.sleep(0.5)
 

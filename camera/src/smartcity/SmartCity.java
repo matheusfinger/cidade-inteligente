@@ -3193,6 +3193,10 @@ public final class SmartCity extends com.google.protobuf.GeneratedFile {
        * <code>SEND_COMMAND = 2;</code>
        */
       SEND_COMMAND(2),
+      /**
+       * <code>GET_HISTORY = 3;</code>
+       */
+      GET_HISTORY(3),
       UNRECOGNIZED(-1),
       ;
 
@@ -3217,6 +3221,10 @@ public final class SmartCity extends com.google.protobuf.GeneratedFile {
        * <code>SEND_COMMAND = 2;</code>
        */
       public static final int SEND_COMMAND_VALUE = 2;
+      /**
+       * <code>GET_HISTORY = 3;</code>
+       */
+      public static final int GET_HISTORY_VALUE = 3;
 
 
       public final int getNumber() {
@@ -3246,6 +3254,7 @@ public final class SmartCity extends com.google.protobuf.GeneratedFile {
           case 0: return GET_STATUS;
           case 1: return GET_ANALYTICS;
           case 2: return SEND_COMMAND;
+          case 3: return GET_HISTORY;
           default: return null;
         }
       }
@@ -4812,16 +4821,16 @@ public final class SmartCity extends com.google.protobuf.GeneratedFile {
       ")\n\006action\030\001 \001(\0162\031.smartcity.Command.Acti" +
       "on\022\021\n\tparameter\030\002 \001(\002\"G\n\006Action\022\013\n\007TURN_" +
       "ON\020\000\022\014\n\010TURN_OFF\020\001\022\017\n\013CHANGE_FREQ\020\002\022\021\n\rS" +
-      "ET_THRESHOLD\020\003\"\316\001\n\rClientRequest\0222\n\004type" +
+      "ET_THRESHOLD\020\003\"\337\001\n\rClientRequest\0222\n\004type" +
       "\030\001 \001(\0162$.smartcity.ClientRequest.Request" +
       "Type\022\030\n\020target_device_id\030\002 \001(\t\022+\n\017comman" +
-      "d_payload\030\003 \001(\0132\022.smartcity.Command\"B\n\013R" +
+      "d_payload\030\003 \001(\0132\022.smartcity.Command\"S\n\013R" +
       "equestType\022\016\n\nGET_STATUS\020\000\022\021\n\rGET_ANALYT" +
-      "ICS\020\001\022\020\n\014SEND_COMMAND\020\002\"2\n\016ClientRespons" +
-      "e\022\017\n\007success\030\001 \001(\010\022\017\n\007message\030\002 \001(\t*Z\n\nD" +
-      "eviceType\022\013\n\007UNKNOWN\020\000\022\017\n\013TEMPERATURE\020\001\022" +
-      "\017\n\013AIR_QUALITY\020\002\022\021\n\rTRAFFIC_LIGHT\020\003\022\n\n\006C" +
-      "AMERA\020\004b\006proto3"
+      "ICS\020\001\022\020\n\014SEND_COMMAND\020\002\022\017\n\013GET_HISTORY\020\003" +
+      "\"2\n\016ClientResponse\022\017\n\007success\030\001 \001(\010\022\017\n\007m" +
+      "essage\030\002 \001(\t*Z\n\nDeviceType\022\013\n\007UNKNOWN\020\000\022" +
+      "\017\n\013TEMPERATURE\020\001\022\017\n\013AIR_QUALITY\020\002\022\021\n\rTRA" +
+      "FFIC_LIGHT\020\003\022\n\n\006CAMERA\020\004b\006proto3"
     };
     descriptor = com.google.protobuf.Descriptors.FileDescriptor
       .internalBuildGeneratedFileFrom(descriptorData,

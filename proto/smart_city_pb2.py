@@ -24,15 +24,15 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x10smart_city.proto\x12\tsmartcity\"&\n\x10\x44iscoveryRequest\x12\x12\n\ngateway_id\x18\x01 \x01(\t\"\x80\x01\n\x11\x44iscoveryResponse\x12\x11\n\tdevice_id\x18\x01 \x01(\t\x12#\n\x04type\x18\x02 \x01(\x0e\x32\x15.smartcity.DeviceType\x12\n\n\x02ip\x18\x03 \x01(\t\x12\x10\n\x08tcp_port\x18\x04 \x01(\x05\x12\x15\n\rinitial_state\x18\x05 \x01(\t\"A\n\nDataStream\x12\x11\n\tdevice_id\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\x02\x12\x11\n\ttimestamp\x18\x03 \x01(\x03\"\x90\x01\n\x07\x43ommand\x12)\n\x06\x61\x63tion\x18\x01 \x01(\x0e\x32\x19.smartcity.Command.Action\x12\x11\n\tparameter\x18\x02 \x01(\x02\"G\n\x06\x41\x63tion\x12\x0b\n\x07TURN_ON\x10\x00\x12\x0c\n\x08TURN_OFF\x10\x01\x12\x0f\n\x0b\x43HANGE_FREQ\x10\x02\x12\x11\n\rSET_THRESHOLD\x10\x03\"\xce\x01\n\rClientRequest\x12\x32\n\x04type\x18\x01 \x01(\x0e\x32$.smartcity.ClientRequest.RequestType\x12\x18\n\x10target_device_id\x18\x02 \x01(\t\x12+\n\x0f\x63ommand_payload\x18\x03 \x01(\x0b\x32\x12.smartcity.Command\"B\n\x0bRequestType\x12\x0e\n\nGET_STATUS\x10\x00\x12\x11\n\rGET_ANALYTICS\x10\x01\x12\x10\n\x0cSEND_COMMAND\x10\x02\"2\n\x0e\x43lientResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\x0f\n\x07message\x18\x02 \x01(\t*Z\n\nDeviceType\x12\x0b\n\x07UNKNOWN\x10\x00\x12\x0f\n\x0bTEMPERATURE\x10\x01\x12\x0f\n\x0b\x41IR_QUALITY\x10\x02\x12\x11\n\rTRAFFIC_LIGHT\x10\x03\x12\n\n\x06\x43\x41MERA\x10\x04\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x10smart_city.proto\x12\tsmartcity\"&\n\x10\x44iscoveryRequest\x12\x12\n\ngateway_id\x18\x01 \x01(\t\"\x80\x01\n\x11\x44iscoveryResponse\x12\x11\n\tdevice_id\x18\x01 \x01(\t\x12#\n\x04type\x18\x02 \x01(\x0e\x32\x15.smartcity.DeviceType\x12\n\n\x02ip\x18\x03 \x01(\t\x12\x10\n\x08tcp_port\x18\x04 \x01(\x05\x12\x15\n\rinitial_state\x18\x05 \x01(\t\"A\n\nDataStream\x12\x11\n\tdevice_id\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\x02\x12\x11\n\ttimestamp\x18\x03 \x01(\x03\"\x90\x01\n\x07\x43ommand\x12)\n\x06\x61\x63tion\x18\x01 \x01(\x0e\x32\x19.smartcity.Command.Action\x12\x11\n\tparameter\x18\x02 \x01(\x02\"G\n\x06\x41\x63tion\x12\x0b\n\x07TURN_ON\x10\x00\x12\x0c\n\x08TURN_OFF\x10\x01\x12\x0f\n\x0b\x43HANGE_FREQ\x10\x02\x12\x11\n\rSET_THRESHOLD\x10\x03\"\xdf\x01\n\rClientRequest\x12\x32\n\x04type\x18\x01 \x01(\x0e\x32$.smartcity.ClientRequest.RequestType\x12\x18\n\x10target_device_id\x18\x02 \x01(\t\x12+\n\x0f\x63ommand_payload\x18\x03 \x01(\x0b\x32\x12.smartcity.Command\"S\n\x0bRequestType\x12\x0e\n\nGET_STATUS\x10\x00\x12\x11\n\rGET_ANALYTICS\x10\x01\x12\x10\n\x0cSEND_COMMAND\x10\x02\x12\x0f\n\x0bGET_HISTORY\x10\x03\"2\n\x0e\x43lientResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\x0f\n\x07message\x18\x02 \x01(\t*Z\n\nDeviceType\x12\x0b\n\x07UNKNOWN\x10\x00\x12\x0f\n\x0bTEMPERATURE\x10\x01\x12\x0f\n\x0b\x41IR_QUALITY\x10\x02\x12\x11\n\rTRAFFIC_LIGHT\x10\x03\x12\n\n\x06\x43\x41MERA\x10\x04\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'smart_city_pb2', _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
   DESCRIPTOR._loaded_options = None
-  _globals['_DEVICETYPE']._serialized_start=677
-  _globals['_DEVICETYPE']._serialized_end=767
+  _globals['_DEVICETYPE']._serialized_start=694
+  _globals['_DEVICETYPE']._serialized_end=784
   _globals['_DISCOVERYREQUEST']._serialized_start=31
   _globals['_DISCOVERYREQUEST']._serialized_end=69
   _globals['_DISCOVERYRESPONSE']._serialized_start=72
@@ -44,9 +44,9 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_COMMAND_ACTION']._serialized_start=343
   _globals['_COMMAND_ACTION']._serialized_end=414
   _globals['_CLIENTREQUEST']._serialized_start=417
-  _globals['_CLIENTREQUEST']._serialized_end=623
+  _globals['_CLIENTREQUEST']._serialized_end=640
   _globals['_CLIENTREQUEST_REQUESTTYPE']._serialized_start=557
-  _globals['_CLIENTREQUEST_REQUESTTYPE']._serialized_end=623
-  _globals['_CLIENTRESPONSE']._serialized_start=625
-  _globals['_CLIENTRESPONSE']._serialized_end=675
+  _globals['_CLIENTREQUEST_REQUESTTYPE']._serialized_end=640
+  _globals['_CLIENTRESPONSE']._serialized_start=642
+  _globals['_CLIENTRESPONSE']._serialized_end=692
 # @@protoc_insertion_point(module_scope)

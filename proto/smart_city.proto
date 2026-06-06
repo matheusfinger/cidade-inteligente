@@ -50,6 +50,7 @@ message ClientRequest {
     GET_STATUS = 0;
     GET_ANALYTICS = 1;
     SEND_COMMAND = 2;
+    GET_HISTORY = 3;
   }
   RequestType type = 1;
   
