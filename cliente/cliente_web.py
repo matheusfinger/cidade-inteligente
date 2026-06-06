@@ -62,7 +62,7 @@ def get_status_rede():
 
 # --- CONFIGURAÇÃO DA PÁGINA ---
 st.set_page_config(page_title="Smart City Dashboard", page_icon="🏙️", layout="wide")
-st.title("🏙️ Smart City - Central Analítica")
+st.title("Smart City - Central Analítica")
 
 # Busca os dispositivos ativos e inativos em tempo real
 ativos, inativos = get_status_rede()
@@ -70,7 +70,7 @@ ativos, inativos = get_status_rede()
 todos_dispositivos = ativos + inativos
 
 # --- BARRA LATERAL: CONTROLES ---
-st.sidebar.header("🕹️ Controle de Dispositivos")
+st.sidebar.header("Controle de Dispositivos")
 
 alvo = st.sidebar.selectbox(
     "Selecione o Dispositivo Alvo", 
@@ -118,19 +118,19 @@ with col1:
     else:
         # Bloco de Ativos (Verde)
         if ativos:
-            st.markdown("🟢 **Operando**")
+            st.markdown("🟢 **Ativos** 🟢")
             for d in ativos:
                 st.success(d)
                 
         # Bloco de Inativos (Vermelho/Amarelo)
         if inativos:
-            st.markdown("🔴 **Em Standby (Desativados)**")
+            st.markdown("🔴 **Inativos** 🔴")
             for d in inativos:
                 st.error(d)
 
 # Coluna 2: Gráficos de Séries Temporais
 with col2:
-    st.subheader("📈 Séries Temporais (Histórico)")
+    st.subheader("Séries Temporais (Histórico)")
     
     # Tratamento especial para a Estação Meteorológica que tem 2 gráficos
     opcoes_grafico = []
