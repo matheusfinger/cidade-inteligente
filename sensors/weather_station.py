@@ -1,6 +1,5 @@
 import sys, os, time, random
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
 from sensors._base_sensor import BaseSensor
 from proto import smart_city_pb2
 
@@ -9,7 +8,7 @@ class WeatherStation(BaseSensor):
         super().__init__(
             device_id     = 'WeatherStation-Centro',
             device_type   = smart_city_pb2.TEMPERATURE,
-            tcp_port      = 0,        # sensor contínuo: sem comandos TCP
+            tcp_port      = -1,   # sensor contínuo: sem servidor TCP
             send_interval = 10,
         )
         self._temp  = random.uniform(24.0, 28.0)

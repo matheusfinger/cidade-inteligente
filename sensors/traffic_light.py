@@ -1,6 +1,5 @@
 import sys, os, time, random
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
 from sensors._base_sensor import BaseSensor
 from proto import smart_city_pb2
 
@@ -9,13 +8,13 @@ class TrafficLight(BaseSensor):
         super().__init__(
             device_id     = 'TrafficLight-AvenidaCentral',
             device_type   = smart_city_pb2.TRAFFIC_LIGHT,
-            tcp_port      = 6002,
+            tcp_port      = 0,    # porta dinâmica — SO escolhe
             send_interval = 15,
         )
-        self.alert_threshold = 40.0   # veículos/min
+        self.alert_threshold = 40.0 # veículos/min
 
     def _apply_command(self, cmd):
-        super()._apply_command(cmd)   # TURN_ON, TURN_OFF, CHANGE_FREQ
+        super()._apply_command(cmd) # TURN_ON, TURN_OFF, CHANGE_FREQ
         if cmd.action == smart_city_pb2.Command.SET_THRESHOLD:
             self.alert_threshold = cmd.parameter
             print(f"[{self.device_id}] Limiar → {self.alert_threshold} veíc/min")

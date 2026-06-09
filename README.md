@@ -19,3 +19,24 @@ Certifique-se de que tem instalado na sua máquina:
 Instale as dependências do Python executando:
 ```bash
 pip install -r requirements.txt
+```
+
+## Execução do Projeto
+### Gateway
+```bash
+python gateway/gateway.py
+```
+### Sensores (Exceto Camera)
+```bash
+python sensors/<nomedosensor>.py
+```
+### Camera
+```bash
+cd camera/
+mvn clean package # Caso pasta target/ não esteja compilada
+java -jar target/camera-1.0.jar
+```
+### Cliente
+```bash
+streamlit run cliente/cliente_web.py
+```

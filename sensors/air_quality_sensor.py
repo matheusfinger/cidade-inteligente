@@ -1,6 +1,5 @@
 import sys, os, time, random
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
 from sensors._base_sensor import BaseSensor
 from proto import smart_city_pb2
 
@@ -9,10 +8,10 @@ class AirQualitySensor(BaseSensor):
         super().__init__(
             device_id     = 'AirQuality-Industrial',
             device_type   = smart_city_pb2.AIR_QUALITY,
-            tcp_port      = 6003,
+            tcp_port      = 0,    # porta dinâmica — SO escolhe
             send_interval = 20,
         )
-        self.alert_threshold = 800.0   # ppm CO2
+        self.alert_threshold = 800.0 # ppm CO2
         self._co2 = random.uniform(400.0, 500.0)
 
     def _apply_command(self, cmd):

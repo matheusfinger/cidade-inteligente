@@ -10,22 +10,48 @@
     <packaging>jar</packaging>
 
     <properties>
-        <maven.compiler.source>11</maven.compiler.source>
-        <maven.compiler.target>11</maven.compiler.target>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
+        <protobuf.version>4.29.3</protobuf.version>
     </properties>
 
     <dependencies>
         <dependency>
             <groupId>com.google.protobuf</groupId>
             <artifactId>protobuf-java</artifactId>
-            <version>3.25.1</version>
+            <version>${protobuf.version}</version>
         </dependency>
     </dependencies>
 
     <build>
         <sourceDirectory>src</sourceDirectory>
         <plugins>
-            <!-- Empacota todas as dependências em um único JAR executável -->
+            <!-- Regenera SmartCity.java a partir do .proto -->
+            <plugin>
+                <groupId>com.github.os72</groupId>
+                <artifactId>protoc-jar-maven-plugin</artifactId>
+                <version>3.11.4</version>
+                <executions>
+                    <execution>
+                        <phase>generate-sources</phase>
+                        <goals><goal>run</goal></goals>
+                        <configuration>
+                            <protocVersion>3.25.1</protocVersion>
+                            <inputDirectories>
+                                <include>../proto</include>
+                            </inputDirectories>
+                            <outputTargets>
+                                <outputTarget>
+                                    <type>java</type>
+                                    <outputDirectory>src</outputDirectory>
+                                </outputTarget>
+                            </outputTargets>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- Fat JAR executável -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>

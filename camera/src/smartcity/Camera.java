@@ -6,52 +6,43 @@ import java.util.Random;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-/**
- * Câmera de monitoramento urbano — fonte contínua controlável.
- *
- * Comportamento:
- *  - Discovery : escuta multicast UDP e responde com DiscoveryResponse
- *  - Dados     : envia DataStream UDP periódico (pessoas detectadas no frame)
- *  - Comandos  : aceita TURN_ON, TURN_OFF e CHANGE_FREQ via TCP
- */
 public class Camera {
 
-    // ── Configurações ─────────────────────────────────────────────────────────
     private static final String MULTICAST_GROUP  = "224.0.0.1";
     private static final int    MULTICAST_PORT   = 5000;
     private static final String GATEWAY_IP       = "127.0.0.1";
     private static final int    GATEWAY_PORT     = 5001;
     private static final int    DATA_PORT        = 5002;
-    private static final int    TCP_PORT         = 6004;
     private static final String DEVICE_ID        = "Camera-PracaCentral";
-    private static final int    DEFAULT_INTERVAL = 12;   // segundos
+    private static final int    DEFAULT_INTERVAL = 12;
 
-    // ── Estado (modificável por comandos TCP) ─────────────────────────────────
-    private final AtomicBoolean active        = new AtomicBoolean(true);
-    private final AtomicBoolean running       = new AtomicBoolean(true);
-    private final AtomicInteger sendInterval  = new AtomicInteger(DEFAULT_INTERVAL);
+    private final AtomicBoolean active       = new AtomicBoolean(true);
+    private final AtomicBoolean running      = new AtomicBoolean(true);
+    private final AtomicInteger sendInterval = new AtomicInteger(DEFAULT_INTERVAL);
 
-    // ── Simulação ─────────────────────────────────────────────────────────────
+    // porta TCP real atribuída pelo SO após bind — anunciada no DiscoveryResponse
+    private final AtomicInteger tcpPortReal  = new AtomicInteger(0);
+
     private final Random rng = new Random();
     private double pessoasBase = 15.0;
 
-    // ── Entry point ───────────────────────────────────────────────────────────
     public static void main(String[] args) throws InterruptedException {
         Camera cam = new Camera();
 
-        Thread tDiscovery = new Thread(cam::listenForDiscover, "discovery");
-        Thread tCommands  = new Thread(cam::listenForCommands, "commands");
-
-        tDiscovery.setDaemon(true);
+        // Servidor TCP sobe PRIMEIRO para preencher tcpPortReal antes do discovery
+        Thread tCommands = new Thread(cam::listenForCommands, "commands");
         tCommands.setDaemon(true);
-
-        tDiscovery.start();
         tCommands.start();
 
-        // Pequeno delay para os sockets abrirem antes de enviar dados
-        Thread.sleep(500);
+        // Aguarda o bind acontecer e tcpPortReal ser preenchido
+        while (cam.tcpPortReal.get() == 0) {
+            Thread.sleep(50);
+        }
 
-        // Registra shutdown hook para Ctrl+C
+        Thread tDiscovery = new Thread(cam::listenForDiscover, "discovery");
+        tDiscovery.setDaemon(true);
+        tDiscovery.start();
+
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             cam.running.set(false);
             System.out.println("\n[" + DEVICE_ID + "] Desligado.");
@@ -60,11 +51,10 @@ public class Camera {
         cam.sendDataLoop();
     }
 
-    // ── Discovery: escuta DISCOVER e responde ─────────────────────────────────
+    // ── Discovery ─────────────────────────────────────────────────────────────
     private void listenForDiscover() {
         try (MulticastSocket sock = new MulticastSocket(MULTICAST_PORT)) {
             sock.setReuseAddress(true);
-            // SO_REUSEPORT equivalente em Java: setReuseAddress já cobre na maioria dos SO
             InetAddress group = InetAddress.getByName(MULTICAST_GROUP);
             sock.joinGroup(group);
 
@@ -82,26 +72,20 @@ public class Camera {
                             SmartCity.DiscoveryRequest.parseFrom(
                                     java.util.Arrays.copyOf(pkt.getData(), pkt.getLength()));
 
-                    System.out.printf("[%s] DISCOVER de '%s' — respondendo...%n",
-                            DEVICE_ID, req.getGatewayId());
+                    System.out.printf("[%s] DISCOVER de '%s' — respondendo na porta TCP %d...%n",
+                            DEVICE_ID, req.getGatewayId(), tcpPortReal.get());
 
-                    // Monta DiscoveryResponse
                     SmartCity.DiscoveryResponse resp = SmartCity.DiscoveryResponse.newBuilder()
                             .setDeviceId(DEVICE_ID)
                             .setType(SmartCity.DeviceType.CAMERA)
                             .setIp("127.0.0.1")
-                            .setTcpPort(TCP_PORT)
+                            .setTcpPort(tcpPortReal.get())   // porta dinâmica real
                             .setInitialState(active.get() ? "ATIVO" : "INATIVO")
                             .build();
 
-                    byte[] respBytes = resp.toByteArray();
-
-                    // Responde sempre para GATEWAY_IP (não para pkt.getAddress())
-                    // pkt.getAddress() em multicast local pode ser o IP do roteador,
-                    // não o IP real do gateway.
                     try (DatagramSocket rs = new DatagramSocket()) {
-                        rs.send(new DatagramPacket(
-                                respBytes, respBytes.length,
+                        byte[] respBytes = resp.toByteArray();
+                        rs.send(new DatagramPacket(respBytes, respBytes.length,
                                 InetAddress.getByName(GATEWAY_IP), GATEWAY_PORT));
                     }
 
@@ -121,23 +105,21 @@ public class Camera {
 
     // ── Comandos TCP ──────────────────────────────────────────────────────────
     private void listenForCommands() {
-        try (ServerSocket srv = new ServerSocket(TCP_PORT)) {
+        // porta 0 → SO escolhe uma porta livre
+        try (ServerSocket srv = new ServerSocket(0)) {
             srv.setReuseAddress(true);
-            srv.setSoTimeout(1000);   // timeout para verificar running periodicamente
+            srv.setSoTimeout(1000);
 
-            System.out.printf("[%s] Aguardando comandos TCP na porta %d...%n",
-                    DEVICE_ID, TCP_PORT);
+            // registra a porta real para o discovery anunciar
+            tcpPortReal.set(srv.getLocalPort());
+            System.out.printf("[%s] Comandos TCP na porta %d (dinâmica)...%n",
+                    DEVICE_ID, tcpPortReal.get());
 
             while (running.get()) {
                 try {
                     Socket conn = srv.accept();
-                    // Cada conexão tratada em thread separada
-                    Thread t = new Thread(() -> handleCommand(conn), "cmd-handler");
-                    t.setDaemon(true);
-                    t.start();
-                } catch (SocketTimeoutException ignored) {
-                    // loop para verificar running
-                }
+                    new Thread(() -> handleCommand(conn), "cmd-handler").start();
+                } catch (SocketTimeoutException ignored) {}
             }
         } catch (IOException e) {
             if (running.get()) {
@@ -158,37 +140,33 @@ public class Camera {
                     baos.write(tmp, 0, n);
                 }
             } catch (SocketTimeoutException ignored) {}
-            byte[] buf = baos.toByteArray();
-            if (buf.length == 0) return;
 
+            byte[] buf = baos.toByteArray();
+            // buf vazio = TURN_ON (valor default 0 não é serializado pelo proto3)
             SmartCity.Command cmd = SmartCity.Command.parseFrom(buf);
+
+            System.out.printf("[%s] Comando: action=%s parameter=%.1f%n",
+                    DEVICE_ID, cmd.getAction(), cmd.getParameter());
 
             switch (cmd.getAction()) {
                 case TURN_ON:
                     active.set(true);
-                    System.out.printf("[%s] Comando: ATIVADO%n", DEVICE_ID);
+                    System.out.printf("[%s] ATIVADO%n", DEVICE_ID);
                     break;
-
                 case TURN_OFF:
                     active.set(false);
-                    System.out.printf("[%s] Comando: DESATIVADO%n", DEVICE_ID);
+                    System.out.printf("[%s] DESATIVADO%n", DEVICE_ID);
                     break;
-
                 case CHANGE_FREQ:
-                    int novoIntervalo = Math.max(1, (int) cmd.getParameter());
-                    sendInterval.set(novoIntervalo);
-                    System.out.printf("[%s] Comando: frequência → %ds%n",
-                            DEVICE_ID, novoIntervalo);
+                    int novo = Math.max(1, (int) cmd.getParameter());
+                    sendInterval.set(novo);
+                    System.out.printf("[%s] Frequência → %ds%n", DEVICE_ID, novo);
                     break;
-
                 case SET_THRESHOLD:
-                    // Câmera não tem limiar de alerta, mas aceita o comando sem erros
-                    System.out.printf("[%s] Comando SET_THRESHOLD ignorado (câmera não usa limiar)%n",
-                            DEVICE_ID);
+                    System.out.printf("[%s] SET_THRESHOLD ignorado%n", DEVICE_ID);
                     break;
-
                 default:
-                    System.out.printf("[%s] Comando desconhecido recebido%n", DEVICE_ID);
+                    System.out.printf("[%s] Comando desconhecido%n", DEVICE_ID);
             }
 
         } catch (IOException e) {
@@ -197,33 +175,21 @@ public class Camera {
         }
     }
 
-    // ── Simulação de pessoas detectadas ──────────────────────────────────────
-    /**
-     * Random walk com padrão diurno:
-     *   - madrugada (0h-6h):  0-5 pessoas
-     *   - manhã (7h-9h):      20-60 (pico)
-     *   - tarde (10h-16h):    10-30
-     *   - tarde/noite (17h-19h): 25-50 (segundo pico)
-     *   - noite (20h-23h):    5-15
-     */
+    // ── Simulação ─────────────────────────────────────────────────────────────
     private double nextPessoas() {
         int hora = java.time.LocalTime.now().getHour();
         double base;
-
-        if (hora >= 7 && hora <= 9)        base = rng.nextDouble() * 40 + 20;
+        if      (hora >= 7  && hora <= 9)  base = rng.nextDouble() * 40 + 20;
         else if (hora >= 17 && hora <= 19) base = rng.nextDouble() * 25 + 25;
-        else if (hora >= 0 && hora <= 5)   base = rng.nextDouble() * 5;
+        else if (hora >= 0  && hora <= 5)  base = rng.nextDouble() * 5;
         else if (hora >= 20)               base = rng.nextDouble() * 10 + 5;
         else                               base = rng.nextDouble() * 20 + 10;
-
-        // Random walk suave
         pessoasBase += (rng.nextDouble() - 0.5) * 4;
         pessoasBase  = Math.max(0, Math.min(pessoasBase, base * 1.2));
-
         return Math.max(0, Math.round(pessoasBase));
     }
 
-    // ── Loop de envio de dados UDP ────────────────────────────────────────────
+    // ── Envio de dados ────────────────────────────────────────────────────────
     private void sendDataLoop() {
         try (DatagramSocket dataSock = new DatagramSocket()) {
             System.out.printf("[%s] Enviando dados a cada %ds...%n",
@@ -231,14 +197,12 @@ public class Camera {
 
             while (running.get()) {
                 if (!active.get()) {
-                    System.out.printf("[%s] Câmera desativada — aguardando reativação...%n",
-                            DEVICE_ID);
+                    System.out.printf("[%s] Desativada — aguardando reativação...%n", DEVICE_ID);
                     Thread.sleep(2000);
                     continue;
                 }
 
                 double pessoas = nextPessoas();
-
                 SmartCity.DataStream stream = SmartCity.DataStream.newBuilder()
                         .setDeviceId(DEVICE_ID)
                         .setValue((float) pessoas)
@@ -246,12 +210,10 @@ public class Camera {
                         .build();
 
                 byte[] data = stream.toByteArray();
-                dataSock.send(new DatagramPacket(
-                        data, data.length,
+                dataSock.send(new DatagramPacket(data, data.length,
                         InetAddress.getByName(GATEWAY_IP), DATA_PORT));
 
                 System.out.printf("[%s] Pessoas detectadas: %.0f%n", DEVICE_ID, pessoas);
-
                 Thread.sleep(sendInterval.get() * 1000L);
             }
 
