@@ -120,7 +120,7 @@ def menu():
             resp = send_request(req)
             if resp:
                 print("\n--- RESPOSTA DO COMANDO ---")
-                status = "✅ SUCESSO" if resp.success else "❌ FALHA"
+                status = "Sucesso" if resp.success else "Falha"
                 print(f"{status}: {resp.message}")
         else:
             print("Opção inválida.")

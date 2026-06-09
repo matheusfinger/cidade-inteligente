@@ -5,8 +5,8 @@ import os
 import json
 import pandas as pd
 
-# Ajuste do path para o Protobuf
 pasta_raiz = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+# Colocando o arquivo smart_city_pb2 no path para importar
 sys.path.insert(0, pasta_raiz)
 from proto import smart_city_pb2
 
@@ -78,19 +78,28 @@ alvo = st.sidebar.selectbox(
     format_func=lambda x: "Selecione..." if x == "" else x
 )
 
-comando_op = st.sidebar.selectbox("Comando", ["Nenhum", "Ligar", "Desligar", "Alterar Frequência"])
+# Adicionada a opção "Alterar Limiar" na lista
+comando_op = st.sidebar.selectbox("Comando", ["Nenhum", "Ligar", "Desligar", "Alterar Frequência", "Alterar Limiar"])
 parametro = 0.0
 
+# Define qual campo de input mostrar dependendo do comando selecionado
 if comando_op == "Alterar Frequência":
     parametro = st.sidebar.number_input("Nova Frequência (s)", min_value=1.0, value=5.0)
+elif comando_op == "Alterar Limiar":
+    parametro = st.sidebar.number_input("Novo Limiar", min_value=0.0, value=800.0, step=10.0)
 
 if st.sidebar.button("Enviar Comando"):
     if alvo and comando_op != "Nenhum":
         cmd = smart_city_pb2.Command()
-        if comando_op == "Ligar": cmd.action = smart_city_pb2.Command.TURN_ON
-        elif comando_op == "Desligar": cmd.action = smart_city_pb2.Command.TURN_OFF
+        if comando_op == "Ligar": 
+            cmd.action = smart_city_pb2.Command.TURN_ON
+        elif comando_op == "Desligar": 
+            cmd.action = smart_city_pb2.Command.TURN_OFF
         elif comando_op == "Alterar Frequência":
             cmd.action = smart_city_pb2.Command.CHANGE_FREQ
+            cmd.parameter = parametro
+        elif comando_op == "Alterar Limiar":
+            cmd.action = smart_city_pb2.Command.SET_THRESHOLD
             cmd.parameter = parametro
             
         req = smart_city_pb2.ClientRequest()
